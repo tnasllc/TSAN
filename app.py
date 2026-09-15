@@ -10,9 +10,16 @@ from alpaca.data.enums import DataFeed
 # -----------------------------
 # CONFIG
 # -----------------------------
-KEY = os.getenv("APCA_API_KEY_ID", "")
-SECRET = os.getenv("APCA_API_SECRET_KEY", "")
-FEED = os.getenv("ALPACA_FEED", "iex").lower()
+# Streamlit Cloud Secrets first; environment variables remain a local fallback.
+def get_secret(name, default=""):
+    try:
+        return str(st.secrets.get(name, os.getenv(name, default)))
+    except Exception:
+        return os.getenv(name, default)
+
+KEY = get_secret("APCA_API_KEY_ID")
+SECRET = get_secret("APCA_API_SECRET_KEY")
+FEED = get_secret("ALPACA_FEED", "iex").lower()
 
 USD_MIN = float(os.getenv("USD_MIN", "2"))
 USD_MAX = float(os.getenv("USD_MAX", "10"))
@@ -194,6 +201,11 @@ def run_us_streams():
 st.set_page_config(page_title="Global Catalyst + Volume Scanner", layout="wide")
 st.title("🌍⚡ Global Catalyst + Volume Scanner")
 st.caption("Scans catalyst + volume setups across multiple countries. Non-U.S. feeds require exchange/provider adapters.")
+
+if KEY and SECRET:
+    st.success("🟢 ALPACA CREDENTIALS LOADED — U.S. feed starting")
+else:
+    st.error("🔴 ALPACA DISCONNECTED — credentials not found in Streamlit Secrets")
 
 if "started" not in st.session_state:
     run_us_streams()
